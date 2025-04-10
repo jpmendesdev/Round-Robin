@@ -35,7 +35,7 @@ void create_process(void);
 void list_processes(void);
 void terminate_process(int id);
 void execute_processes_fcfs(void);
-void execute_processes_roundRobin(int);
+void execute_processes_roundRobin();
 
 
 
@@ -59,7 +59,7 @@ int main(void) {
 
         switch (opcao) {
             case 1:
-                execute_processes_roundRobin(4);
+                execute_processes_roundRobin();
                 break;
             case 2:
                 create_process();
@@ -180,8 +180,9 @@ void execute_processes_fcfs(void) {
     terminal_writestring("Todos os processos foram executados");
 }
 
-void execute_processes_roundRobin(int quantum){ // Passagem do novo atributo do método,
-    if(!process_list){                          // o quantum, com um valor fixo e que decrescerá na quantidade de tempo restante de cada processo em execução
+void execute_processes_roundRobin(){
+    int quantum = 0;// Inicializo o quantum como 0
+    if(!process_list){                          // o quantum, com um valor fixo decrescerá na quantidade de tempo restante de cada processo em execução
         terminal_writestring("Nenhum processo existe para escalonar");
         return;
       }
@@ -189,7 +190,7 @@ void execute_processes_roundRobin(int quantum){ // Passagem do novo atributo do 
     Process* current = process_list;
     Process* prev = NULL;
     int current_time=0;
-    quantum = rand() % 3+1;
+    quantum = rand() % 3+1; //Defini a criação do quantum como um random
 
     while(current){
         //Mudar o estado para EM_EXECUCAO
@@ -201,7 +202,8 @@ void execute_processes_roundRobin(int quantum){ // Passagem do novo atributo do 
             //execucao de algo
             sleep(1);
             current_time++;
-            current->time_remaining-=quantum;  //  a cada execução do processo, o quantum será decrescido.
+            current->time_remaining-=quantum;
+          //  a cada execução do processo, o quantum será decrescido.
             printf("Tempo %d: Processo %d - Tempo restante: %d Quantum %d:\n", current_time, current->id, current->time_remaining, quantum); //Printar as informações já com o quantum
         }
         
