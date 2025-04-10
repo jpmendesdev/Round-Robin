@@ -48,7 +48,7 @@ int main(void) {
     while (1) {
         // Verifica processos pendentes antes de continuar
         terminal_writestring("\nKernel Simples\n");
-        terminal_writestring("1. Executar Processos (FCFS)\n");
+        terminal_writestring("1. Executar Processos (Round Robin)\n");
         terminal_writestring("2. Criar Processo\n");
         terminal_writestring("3. Listar Processos\n");
         terminal_writestring("4. Terminar Processo\n");
@@ -140,46 +140,7 @@ void list_processes(void) {
 // Função para terminar um processo
 void terminate_process(int id) {
 }
-
-// Função de escalonamento FCFS (First-Come, First-Served)
-void execute_processes_fcfs(void) {
-    if(!process_list){
-      terminal_writestring("Nenhum processo existe para escalonar");
-      return;
-    }
-    terminal_writestring("Iniciando escalonamento\n");
-    Process* current = process_list;
-    Process* prev = NULL;
-    int current_time=0;
-    
-    while(current){
-        //Mudar o estado para EM_EXECUCAO
-        current->state = EM_EXECUCAO;
-        printf("Tempo %d: Processo %d em execução\n", current_time, current->id);
-        
-        //SIMULAR A EXECUCAO ATÉ A CONCLUSÃO DO PROCESSO
-        while(current->time_remaining>0){
-            //execucao de algo
-            sleep(1);
-            current_time++;
-            current->time_remaining--;
-            printf("Tempo %d: Processo %d - Tempo restante: %d Quantum %d:\n", current_time, current->id, current->time_remaining);
-        }
-        
-        current->state = CONCLUIDO;
-        printf("Tempo %d: Processo %d concluído\n", current_time, current->id);
-        //remover o processo concluido da lista
-        if(prev){
-            prev->next = current->next;
-        } else{
-            process_list = current->next;
-        }
-        free(current);
-        current = (prev) ? prev->next: process_list;
-    }
-    terminal_writestring("Todos os processos foram executados");
-}
-
+// Função para executar o Round Robinho
 void execute_processes_roundRobin(){
     int quantum = 0;// Inicializo o quantum como 0
     if(!process_list){                          // o quantum, com um valor fixo decrescerá na quantidade de tempo restante de cada processo em execução
@@ -190,21 +151,26 @@ void execute_processes_roundRobin(){
     Process* current = process_list;
     Process* prev = NULL;
     int current_time=0;
-    quantum = rand() % 3+1; //Defini a criação do quantum como um random
-
+    quantum = rand() % 4; //Defini a criação do quantum como um random
+    printf("Quantum definido como: %d\n",quantum);
     while(current){
         //Mudar o estado para EM_EXECUCAO
         current->state = EM_EXECUCAO;
         printf("Tempo %d: Processo %d em execução\n", current_time, current->id);
         
         //SIMULAR A EXECUCAO ATÉ A CONCLUSÃO DO PROCESSO
-        while(current->time_remaining>0){
-            //execucao de algo
+        while(current->time_remaining>0){ 
             sleep(1);
             current_time++;
-            current->time_remaining-=quantum;
+            
+            if(current->time_remaining < quantum){ // Caso o tempo restante seja menor que o quantum ex: quantum 2, time_remaining = 1, para que ele não retorne o time_remaining negativo ele recebe 0.
+                current->time_remaining = 0;
+            }else{
+                current->time_remaining -= quantum;  //caso não, ele atualiza o time_remanining, decrescendo de acordo com o quantum
+            }
+            
           //  a cada execução do processo, o quantum será decrescido.
-            printf("Tempo %d: Processo %d - Tempo restante: %d Quantum %d:\n", current_time, current->id, current->time_remaining, quantum); //Printar as informações já com o quantum
+            printf("Tempo %d: Processo %d - Tempo restante: %d \n", current_time, current->id, current->time_remaining); //Printar as informações já com o quantum
         }
         
         current->state = CONCLUIDO;
