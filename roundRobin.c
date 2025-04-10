@@ -14,6 +14,7 @@ typedef enum {
 // Estrutura para representar um processo (PCB)
 typedef struct Process {
     int id;
+    int quantum;
     int time_remaining;
     ProcessState state;
     struct Process* next;
@@ -34,6 +35,7 @@ void create_process(void);
 void list_processes(void);
 void terminate_process(int id);
 void execute_processes_fcfs(void);
+void execute_processes_roundRobin(int);
 
 
 
@@ -57,7 +59,7 @@ int main(void) {
 
         switch (opcao) {
             case 1:
-                execute_processes_fcfs();
+                execute_processes_roundRobin(4);
                 break;
             case 2:
                 create_process();
@@ -161,7 +163,7 @@ void execute_processes_fcfs(void) {
             sleep(1);
             current_time++;
             current->time_remaining--;
-             printf("Tempo %d: Processo %d - Tempo restante: %d\n", current_time, current->id, current->time_remaining);
+            printf("Tempo %d: Processo %d - Tempo restante: %d Quantum %d:\n", current_time, current->id, current->time_remaining);
         }
         
         current->state = CONCLUIDO;
@@ -177,6 +179,46 @@ void execute_processes_fcfs(void) {
     }
     terminal_writestring("Todos os processos foram executados");
 }
+
+void execute_processes_roundRobin(int quantum){ // Passagem do novo atributo do método,
+    if(!process_list){                          // o quantum, com um valor fixo e que decrescerá na quantidade de tempo restante de cada processo em execução
+        terminal_writestring("Nenhum processo existe para escalonar");
+        return;
+      }
+    terminal_writestring("Iniciando escalonamento\n");
+    Process* current = process_list;
+    Process* prev = NULL;
+    int current_time=0;
+    quantum = rand() % 3+1;
+
+    while(current){
+        //Mudar o estado para EM_EXECUCAO
+        current->state = EM_EXECUCAO;
+        printf("Tempo %d: Processo %d em execução\n", current_time, current->id);
+        
+        //SIMULAR A EXECUCAO ATÉ A CONCLUSÃO DO PROCESSO
+        while(current->time_remaining>0){
+            //execucao de algo
+            sleep(1);
+            current_time++;
+            current->time_remaining-=quantum;  //  a cada execução do processo, o quantum será decrescido.
+            printf("Tempo %d: Processo %d - Tempo restante: %d Quantum %d:\n", current_time, current->id, current->time_remaining, quantum); //Printar as informações já com o quantum
+        }
+        
+        current->state = CONCLUIDO;
+        printf("Tempo %d: Processo %d concluído\n", current_time, current->id);
+        //remover o processo concluido da lista
+        if(prev){
+            prev->next = current->next;
+        } else{
+            process_list = current->next;
+        }
+        free(current);
+        current = (prev) ? prev->next: process_list;
+    }
+    terminal_writestring("Todos os processos foram executados");
+}
+
 
 // Função para inicializar o terminal
 void terminal_initialize(void) {
