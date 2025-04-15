@@ -116,7 +116,7 @@ void create_process(void) {
     terminal_writestring("Processo criado com sucesso");
 }
 
-// Função para listar os processos ativos
+
 void list_processes(void) {
     Process* current = process_list;
     if(!current){
@@ -137,63 +137,103 @@ void list_processes(void) {
     }
 }
 
-// Função para terminar um processo
+
 void terminate_process(int id) {
 }
-// Função para executar o Round Robinho
-void execute_processes_roundRobin(){
-    int quantum = 0;// Inicializo o quantum como 0
-    if(!process_list){                          // o quantum, com um valor fixo decrescerá na quantidade de tempo restante de cada processo em execução
-        terminal_writestring("Nenhum processo existe para escalonar");
+// Função para executar o Round Robin
+void execute_processes_roundRobin() {
+    if (!process_list) {
+        terminal_writestring("Nenhum processo existe para escalonar\n");
         return;
-      }
-    terminal_writestring("Iniciando escalonamento\n");
+    }
+
+    int quantum = rand() % 4; // Quantum definido aleatoriamente entre 1 e 4
+    printf("Quantum definido como: %d\n", quantum);
+
     Process* current = process_list;
     Process* prev = NULL;
-    int current_time=0;
-    quantum = rand() % 4; //Defini a criação do quantum como um random
-    printf("Quantum definido como: %d\n",quantum);
-    while(current){
-        //Mudar o estado para EM_EXECUCAO
+    int current_time = 0;
+
+    while (process_list) { // Passa a pecorrer a lista de processos
         current->state = EM_EXECUCAO;
-        printf("Tempo %d: Processo %d em execução\n", current_time, current->id);
+        printf("Tempo %d: Executando processo %d\n", current_time, current->id);
+
+        int tempo_execucao;  
+        if(current->time_remaining < quantum){ // essa lógica impede que o  time_remaining fique negativo, ex: caso time_remaining seja = 1 e o quantum = 2, a variável tempo_execucao receberia 1 que seria o mesmo valor do time_remaining e daria 0.
+            tempo_execucao = current->time_remaining;
+        }else{
+            tempo_execucao = quantum;
+            //caso contrário a variável continua igual ao quantum
+        }
+         
         
-        //SIMULAR A EXECUCAO ATÉ A CONCLUSÃO DO PROCESSO
-        while(current->time_remaining>0){ 
-            sleep(1);
-            current_time++;
+        
+        
+        current->time_remaining -= tempo_execucao; // variável tempo_execução     sendo usada de acordo com o que falei em cima
+        current_time += tempo_execucao;
+
+        sleep(tempo_execucao);  // Simula a execução
+
+        if (current->time_remaining <= 0) {
+            current->state = CONCLUIDO;
+            printf("Tempo %d: Processo %d concluído\n", current_time, current->id);
+
             
-            if(current->time_remaining < quantum){ // Caso o tempo restante seja menor que o quantum ex: quantum 2, time_remaining = 1, para que ele não retorne o time_remaining negativo ele recebe 0.
-                current->time_remaining = 0;
-            }else{
-                current->time_remaining -= quantum;  //caso não, ele atualiza o time_remanining, decrescendo de acordo com o quantum
+            if (current == process_list) { // caso o processo seja o primeiro da lista apontamos a lista para o próximo
+                process_list = current->next;
+                free(current); // limpa a memória
+                current = process_list;
+            } else { // aqui é caso o processo esteja no meio ou no fim da lista
+                prev->next = current->next;
+                free(current);
+                current = prev->next;
             }
-            
-          //  a cada execução do processo, o quantum será decrescido.
-            printf("Tempo %d: Processo %d - Tempo restante: %d \n", current_time, current->id, current->time_remaining); //Printar as informações já com o quantum
+        } else {
+            current->state = PRONTO; //indicando que o processo ainda não terminou, movemos para o final da fila
+            printf("Tempo %d: Processo %d - Tempo restante: %d (final da fila)\n", current_time, current->id, current->time_remaining);
+
+        //Lógica para mover o processo para o final da fila
+            Process* temp = current;
+            if (current == process_list) { // caso o processo seja o primeiro na lista, a lista aponta para o próximo
+                process_list = current->next;
+                current = process_list;
+            } else {
+                prev->next = current->next; // se não, o processo atual é pulado
+                current = prev->next;
+            }
+
+                 temp->next = NULL; // recebe NULL pois será o último na fila
+                if (!process_list) {
+                process_list = temp;
+                prev = NULL;
+                current = process_list;
+            } else  {
+                Process* calda = process_list; // se por acaso a lista ficar vazia, o processo se torna único na lista.
+                while (calda->next) calda = calda->next;
+                calda->next = temp;
+                }
         }
-        
-        current->state = CONCLUIDO;
-        printf("Tempo %d: Processo %d concluído\n", current_time, current->id);
-        //remover o processo concluido da lista
-        if(prev){
-            prev->next = current->next;
-        } else{
-            process_list = current->next;
+
+            if (current == process_list) { // atualização do prev, já que o prev é anterior ao current, caso current seja o primeiro na lista, prev vira NULL e caso prev seja NULL rodamos na lista para encontrar ele.
+            prev = NULL;
+        } else if (prev == NULL) {
+            prev = process_list;
+            while (prev && prev->next != current) {
+                prev = prev->next;
+            }
         }
-        free(current);
-        current = (prev) ? prev->next: process_list;
     }
-    terminal_writestring("Todos os processos foram executados");
+
+    terminal_writestring("Todos os processos foram executados\n");
 }
 
 
-// Função para inicializar o terminal
+ 
 void terminal_initialize(void) {
     terminal_writestring("Inicializando terminal...\n");
 }
 
-// Função para escrever no terminal
+ 
 void terminal_writestring(const char* str) {
     printf("%s", str);
 }
